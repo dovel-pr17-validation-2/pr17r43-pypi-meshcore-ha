@@ -1,0 +1,13 @@
+# Integration-tier test deps: real Home Assistant (via pytest-homeassistant-
+# custom-component) plus the integration's runtime deps, so the real
+# custom_components.meshcore package imports and sets up. This tier runs as a
+# SEPARATE pytest invocation from the unit tier (tests/), which MagicMock-stubs
+# Home Assistant in sys.modules and therefore cannot share a process with this.
+pytest-homeassistant-custom-component==0.13.316
+# Pulled in because the integration depends on logbook -> frontend.
+home-assistant-frontend
+meshcore>=2.3.17
+pycryptodome>=4.2.0
+cachetools>=7.2.8
+paho-mqtt>=2.1.0
+pynacl>=1.6.2

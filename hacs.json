@@ -1,0 +1,6 @@
+{
+  "name": "MeshCore",
+  "render_readme": true,
+  "hacs": "1.6.0",
+  "homeassistant": "2025.6.0"
+}

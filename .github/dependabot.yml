@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    ignore:
+      # Pinned by hand in both integration requirement files: the older pin
+      # (Python 3.13) and requirements-test-integration-current.txt (3.14).
+      - dependency-name: "pytest-homeassistant-custom-component"

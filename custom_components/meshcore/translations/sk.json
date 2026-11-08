@@ -1,0 +1,404 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Zariadenie už je nakonfigurované",
+      "reconfigure_successful": "Re-configuration was successful"
+    },
+    "error": {
+      "cannot_connect": "Nepodarilo sa spojiť",
+      "unknown": "Neočakávaná chyba",
+      "already_configured": "Opakovač je už nakonfigurovaný",
+      "client_already_tracked": "Klienta už sledujete",
+      "login_failed": "Nepodarilo sa pripojiť na opakovač. Skontrolujte heslo a skúste to znovu.",
+      "login_timeout": "Vypršal čas na prihlásenie",
+      "contact_not_found": "Kontakt nebol nájdený",
+      "no_repeaters_found": "Nenašli sa žiadne opakovače. Najprv obnovte kontakty.",
+      "no_clients_found": "Nenašli sa žiadni klienti. Najprv obnovte kontakty..",
+      "device_not_found": "Zariadenie nebolo nájdené v konfigurácii"
+    },
+    "title": "MeshCore",
+    "step": {
+      "user": {
+        "data": {
+          "connection_type": "Typ spojenia"
+        },
+        "description": "Vyberte, ako sa chcete pripojiť k vášmu uzlu MeshCore",
+        "title": "Nastavenie MeshCore"
+      },
+      "usb": {
+        "data": {
+          "usb_path": "Cesta k zariadeniu USB",
+          "baudrate": "Rýchlosť pripojenia"
+        },
+        "description": "Pripojte sa k vášmu uzlu MeshCore prostredníctvom USB",
+        "title": "Nastaviť USB pripojenie"
+      },
+      "ble": {
+        "data": {
+          "ble_address": "Bluetooth zariadenie"
+        },
+        "description": "Pripojte sa k vášmu uzlu MeshCore prostredníctvom Bluetooth",
+        "title": "Nastaviť pripojenie Bluetooth"
+      },
+      "tcp": {
+        "data": {
+          "tcp_host": "Adresa hostiteľa",
+          "tcp_port": "Port"
+        },
+        "description": "Pripojte sa k vášmu uzlu MeshCore prostredníctvom siete",
+        "title": "Nastaviť sieťové pripojenie"
+      },
+      "init": {
+        "data": {
+          "action": "Vyberte akciu"
+        },
+        "description": "Konfigurovať vašu MeshCore integráciu.\n\n{device_status}",
+        "title": "Konfigurácia MeshCore"
+      },
+      "add_repeater": {
+        "data": {
+          "repeater_name": "Dostupné opakovače",
+          "repeater_password": "Heslo opakovača",
+          "telemetry_enabled": "Povoliť dotazovanie na telemetriu (automaticky zisťuje a deteguje údaje telemetrie)",
+          "repeater_update_interval": "Frekvencia obnovovania údajov telemetrie (v sekundách)"
+        },
+        "description": "Sledovať telemetriu a stav opakovača",
+        "title": "Pridať stanicu opakovača"
+      },
+      "add_client": {
+        "data": {
+          "client_name": "Dostupní klienti",
+          "client_update_interval": "Frekvencia aktualizácií (GPS a telemetria bude zisťovaná a detegovaná automaticky)"
+        },
+        "description": "Sledovať prítomnosť a stav batérie klientského zariadenia",
+        "title": "Pridať sledovaného klienta"
+      },
+      "manage_devices": {
+        "data": {
+          "selected_device": "Vyberte zariadenie",
+          "device_action": "Akcia"
+        },
+        "description": "Spravujte vaše nakonfigurované zariadenia:\n\n{device_list}",
+        "title": "Spravovať sledované zariadenia"
+      },
+      "edit_repeater": {
+        "data": {
+          "repeater_password": "Aktualizovať heslo (nechajte prázdne, ak chcete ponechať aktuálne)",
+          "telemetry_enabled": "Povoliť dotazovanie na telemetriu (automaticky zisťuje a deteguje údaje telemetrie)",
+          "repeater_update_interval": "Frekvencia obnovovania údajov telemetrie (v sekundách)"
+        },
+        "description": "Upraviť nastavenia {device_name}",
+        "title": "Upraviť opakovač"
+      },
+      "edit_client": {
+        "data": {
+          "client_update_interval": "Frekvencia aktualizácií (GPS a telemetria bude zisťovaná a detegovaná automaticky)"
+        },
+        "description": "Upraviť nastavenia {device_name}",
+        "title": "Upraviť sledovaného klienta"
+      },
+      "global_settings": {
+        "data": {
+          "disable_contact_discovery": "Zakázať zisťovanie kontaktov",
+          "limit_discovered_contacts": "Obmedziť objavené kontakty",
+          "max_discovered_contacts": "Maximálny počet objavených kontaktov",
+          "self_telemetry_enabled": "Povoliť vlastnú telemetriu",
+          "self_telemetry_interval": "Interval vlastnej telemetrie (v sekundách)",
+          "map_upload_enabled": "Povoliť Map Auto Uploader (map.meshcore.io)",
+          "consume_incoming_messages": "Preberať prichádzajúce správy z frontu"
+        },
+        "data_description": {
+          "map_upload_enabled": "Ak je zapnuté, reklamy od repeaterov a room serverov, ktoré prijmete, sa nahrávajú na map.meshcore.io. Tieto uzly sa zobrazia na oficiálnej mape MeshCore pre komunitu. Vyžaduje povolený export súkromného kľúča vo firmware (`ENABLE_PRIVATE_KEY_EXPORT=1`); bez toho nie je možné nahrávky podpísať.",
+          "consume_incoming_messages": "Predvolene zapnuté. Vypnite, ak má správy kanálov a súkromné správy z frontu preberať iný klient, napríklad telefón cez BLE. Home Assistant bude naďalej zisťovať stav a telemetriu opakovačov a odosielať príkazy. Správy doručené zariadením sa môžu naďalej zobrazovať v Home Assistant. Nastavenie riadi čítanie frontu, nie zobrazovanie správ. Vo fronte môžu pre druhého klienta zostať aj textové odpovede na príkazy."
+        },
+        "description": "Konfigurácia globálnych nastavení integrácie",
+        "title": "Globálne nastavenia"
+      }
+    }
+  },
+  "services": {
+    "send_message": {
+      "name": "Odoslať správu",
+      "description": "Poslať správu uzlu MeshCore",
+      "fields": {
+        "node_id": {
+          "name": "ID uzla",
+          "description": "Identifikátor uzla, ktorému sa má správa odoslať"
+        },
+        "pubkey_prefix": {
+          "name": "Prefix verejného kľúča",
+          "description": "Prefix verejného kľúča (aspoň 6 znakov) uzla, ktorému sa má správa odoslať."
+        },
+        "message": {
+          "name": "Správa",
+          "description": "Text správy, ktorý sa má odoslať"
+        },
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "send_channel_message": {
+      "name": "Odoslať správu do kanála",
+      "description": "Odoslať správu do verejného MeshCore kanála.",
+      "fields": {
+        "channel_idx": {
+          "name": "Index kanála",
+          "description": "Index kanála, kam sa má správa odoslať."
+        },
+        "message": {
+          "name": "Správa",
+          "description": "Text správy, ktorý sa má odoslať",
+          "example": "Pozdrav z Home Asistenta!"
+        },
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "send_ui_message": {
+      "name": "Odoslať UI správu",
+      "description": "Odoslať správu prostredníctvom MeshCore UI pomocníkov. Táto služba prečíta hodnoty 'select.meshcore_recipient_type', 'select.meshcore_channel', 'select.meshcore_contact' a text.meshcore_message' a určí tak prijímateľa a obsah správy. Zavolajte túto službu z karty tlačidla pre pohodlné posielanie správ.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "execute_command": {
+      "name": "Vykonať príkaz MeshCore",
+      "description": "Vykonať príkaz poskytovaný MeshCore knižnicou pre Python. Toto je pokročilá funkcia, ktorá poskytuje priamy prístup k základnému príkazovému rozhraniu. VAROVANIE: Niektoré príkazy vykonajú TRVALÉ ZMENY v konfigurácií vášho uzla. Buďte opatrný.",
+      "fields": {
+        "command": {
+          "name": "Príkaz",
+          "description": "Príkaz s parametrami, ktorý sa má vykonať. Formát je \"[názov príkazu] [param1] [param2] ..\" Príklady: - set_name \"MojeZariadenie\" - send_msg \"f293ac\" \"Pozdrav z Home Asistenta!\" - get_bat -set_tx_power 20 -set_coords 37.7749 -122.4194"
+        },
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "execute_command_ui": {
+      "name": "Vykonať príkaz z UI",
+      "description": "Vykonať príkaz pomocou entity pomocníka text.meshcore_command. Táto služba prečíta príkaz z textového pomocníka a vykoná ho. Po spustení automaticky vyčistí pole pre vstup.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "add_selected_contact": {
+      "name": "Pridať vybraný kontakt",
+      "description": "Pridať kontakt vybraný v entite výberu objavených kontaktov do zoznamu kontaktov vášho uzla.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "remove_selected_contact": {
+      "name": "Odstrániť vybraný kontakt",
+      "description": "Odstrániť kontakt vybraný v entite výberu pridaných kontaktov zo zoznamu kontaktov vášho uzla.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "remove_discovered_contact": {
+      "name": "Odstrániť objavený kontakt",
+      "description": "Odstrániť objavený kontakt zo zoznamu objavených kontaktov. Toto odstráni kontakt z Home Asistenta, ale NEODSTRÁNI ho zo zoznamu kontaktov vášho uzla. Môžete priamo zadať pubkey_prefix alebo ho nechať prázdny a použije sa vybraný kontakt z entity výberu objavených kontaktov.",
+      "fields": {
+        "pubkey_prefix": {
+          "name": "Prefix verejného kľúča",
+          "description": "Prefix verejného kľúča (aspoň 6 znakov) kontaktu na odstránenie. Nechajte prázdne, aby sa použil vybraný kontakt z entity výberu objavených kontaktov."
+        },
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    },
+    "cleanup_unavailable_contacts": {
+      "name": "Vyčistiť nedostupné kontakty",
+      "description": "Odstrániť všetky nedostupné binárne senzory kontaktov MeshCore z Home Asistenta.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nechajte prázdne, aby sa vyčistili všetky zariadenia."
+        }
+      }
+    },
+    "clear_discovered_contacts": {
+      "name": "Vymazať všetky objavené kontakty",
+      "description": "Odstrániť všetky objavené kontakty a ich priradené binárne senzory z Home Asistenta. Toto NEODSTRÁNI kontakty zo zoznamu kontaktov vášho uzla.",
+      "fields": {
+        "entry_id": {
+          "name": "ID konfigurácie",
+          "description": "ID konfigurácie, ak máte viac zariadení MeshCore. Nevyplňujte, ak chcete použiť prvé dostupné zariadenie."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "node_status": {
+        "name": "Stav uzla",
+        "state": {
+          "online": "Online",
+          "offline": "Offline"
+        }
+      },
+      "node_count": {
+        "name": "Počet uzlov"
+      },
+      "last_rssi": {
+        "name": "Sila signálu"
+      },
+      "last_snr": {
+        "name": "Pomer signál-šum"
+      },
+      "battery": {
+        "name": "Batéria"
+      },
+      "last_message": {
+        "name": "Posledná správa"
+      },
+      "uptime": {
+        "name": "Doba prevádzky"
+      },
+      "airtime": {
+        "name": "Doba vysielania"
+      },
+      "nb_sent": {
+        "name": "Odoslané správy"
+      },
+      "nb_recv": {
+        "name": "Prijaté správy"
+      },
+      "out_path": {
+        "name": "Smerovanie (cesta)"
+      },
+      "out_path_len": {
+        "name": "Dĺžka cesty"
+      },
+      "request_successes": {
+        "name": "Úspešné požiadavky"
+      },
+      "request_failures": {
+        "name": "Neúspešné požiadavky"
+      },
+      "battery_voltage": {
+        "name": "Napätie batérie"
+      },
+      "battery_percentage": {
+        "name": "Percentá batérie"
+      },
+      "tx_power": {
+        "name": "Vysielací výkon"
+      },
+      "latitude": {
+        "name": "Zemepisná šírka"
+      },
+      "longitude": {
+        "name": "Zemepisná dĺžka"
+      },
+      "frequency": {
+        "name": "Frekvencia"
+      },
+      "bandwidth": {
+        "name": "Šírka pásma"
+      },
+      "spreading_factor": {
+        "name": "Faktor rozptylu"
+      },
+      "status": {
+        "name": "Stav"
+      },
+      "bat": {
+        "name": "Napätie batérie"
+      },
+      "tx_queue_len": {
+        "name": "Dĺžka TX frontu"
+      },
+      "noise_floor": {
+        "name": "Úroveň šumu"
+      },
+      "sent_flood": {
+        "name": "Odoslané flood správy"
+      },
+      "sent_direct": {
+        "name": "Odoslané priame správy"
+      },
+      "recv_flood": {
+        "name": "Prijaté flood správy"
+      },
+      "recv_direct": {
+        "name": "Prijaté priame správy"
+      },
+      "full_evts": {
+        "name": "Úplné udalosti"
+      },
+      "direct_dups": {
+        "name": "Priame duplicity"
+      },
+      "flood_dups": {
+        "name": "Flood duplicity"
+      },
+      "airtime_utilization": {
+        "name": "Využitie vysielacieho času"
+      },
+      "rx_airtime": {
+        "name": "RX čas vysielania"
+      },
+      "rx_airtime_utilization": {
+        "name": "Využitie vysielacieho času"
+      },
+      "direct_dups_rate": {
+        "name": "Rýchlosť priamych duplicít"
+      },
+      "flood_dups_rate": {
+        "name": "Rýchlosť flood duplicít"
+      },
+      "nb_recv_rate": {
+        "name": "Rýchlosť prijatých správ"
+      },
+      "nb_sent_rate": {
+        "name": "Rýchlosť odoslaných správ"
+      },
+      "recv_direct_rate": {
+        "name": "Rýchlosť prijatých priamych správ"
+      },
+      "recv_flood_rate": {
+        "name": "Rýchlosť prijatých flood správ"
+      },
+      "sent_direct_rate": {
+        "name": "Rýchlosť odoslaných priamych správ"
+      },
+      "sent_flood_rate": {
+        "name": "Rýchlosť odoslaných flood správ"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "global_settings": {
+        "data": {
+          "consume_incoming_messages": "Preberať prichádzajúce správy z frontu",
+          "messages_interval": "Message Poll Interval (seconds)"
+        },
+        "data_description": {
+          "consume_incoming_messages": "Predvolene zapnuté. Vypnite, ak má správy kanálov a súkromné správy z frontu preberať iný klient, napríklad telefón cez BLE. Home Assistant bude naďalej zisťovať stav a telemetriu opakovačov a odosielať príkazy. Správy doručené zariadením sa môžu naďalej zobrazovať v Home Assistant. Nastavenie riadi čítanie frontu, nie zobrazovanie správ. Vo fronte môžu pre druhého klienta zostať aj textové odpovede na príkazy.",
+          "messages_interval": "How often the integration polls the companion radio for queued messages and runs its scheduling tick. Local USB/BLE/TCP traffic only, no mesh airtime. Lower values make chat feel faster at the cost of more companion chatter."
+        }
+      }
+    }
+  }
+}

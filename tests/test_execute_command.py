@@ -1,0 +1,312 @@
+"""Tests for async_execute_command_service response normalization in services.py.
+
+Targets the three SDK return shapes the handler must normalize:
+  * Event-with-payload-dict (most send_* / set_* commands)
+  * Plain dict             (req_*_sync awaited response payloads)
+  * list / scalar / str    (req_*_sync returns wrapped as {"result": <value>})
+  * None                   (req_*_sync timeout / no response)
+"""
+import importlib.util
+import inspect
+import os
+import sys
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from tests.support.session import StubSession
+
+
+# ─── Module loading ────────────────────────────────────────────────────
+# Patch meshcore.events.EventType with the members services.py references.
+# conftest inserts a bare MagicMock for meshcore.events; the module-level
+# `from meshcore.events import EventType` resolves against whatever attribute
+# exists on that mock at import time.
+class _ET:
+    ERROR = "error"
+    TRACE_DATA = "trace_data"
+    PATH_RESPONSE = "path_response"
+    MSG_SENT = "msg_sent"
+    CONTACTS = "contacts"
+    ACK = "ack"
+
+_mc_events = sys.modules.get("meshcore.events")
+if _mc_events is not None:
+    _mc_events.EventType = _ET
+
+_SERVICES_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "custom_components", "meshcore", "services.py",
+)
+_spec = importlib.util.spec_from_file_location(
+    "custom_components.meshcore.services", _SERVICES_PATH
+)
+_module = importlib.util.module_from_spec(_spec)
+_module.__package__ = "custom_components.meshcore"
+_spec.loader.exec_module(_module)
+
+async_setup_services = _module.async_setup_services
+DOMAIN = _module.DOMAIN
+
+# The const module is MagicMock-mocked in conftest, so when services.py does
+# `call.data[ATTR_COMMAND]`, the key is a MagicMock attribute, not the string
+# "command". Use the same MagicMocks the production code uses as dict keys.
+ATTR_COMMAND = _module.ATTR_COMMAND
+ATTR_ENTRY_ID = _module.ATTR_ENTRY_ID
+
+
+# ─── Fixtures ──────────────────────────────────────────────────────────
+class _Event:
+    """Mimic meshcore.events.Event enough for response normalization."""
+
+    def __init__(self, type_, payload):
+        self.type = type_
+        self.payload = payload
+
+
+def _build_coordinator(command_name, return_value, contact=None):
+    """Coordinator with a single mocked SDK command and optional contact lookup."""
+    coord = MagicMock()
+    commands = MagicMock()
+    setattr(commands, command_name, AsyncMock(return_value=return_value))
+
+    # Contact lookup for "contact"-typed params. _resolve_contact tries the
+    # prefix lookup first; returning the contact short-circuits the rest.
+    coord.api = StubSession(
+        commands,
+        connected=True,
+        self_info={"suggested_timeout": 1000},
+        contact_by_prefix=MagicMock(return_value=contact),
+        contact_by_name=MagicMock(return_value=None),
+    )
+    coord._discovered_contacts = {}
+    return coord
+
+
+async def _get_execute_handler(coordinator):
+    """Run async_setup_services with stubbed hass and return execute handler."""
+    registered = {}
+    hass = MagicMock()
+    hass.data = {DOMAIN: {"entry1": coordinator}}
+
+    def _register(domain, service_const, handler, **kwargs):
+        registered[getattr(handler, "__name__", repr(handler))] = (handler, kwargs)
+
+    hass.services.async_register = _register
+    hass.services.has_service = MagicMock(return_value=False)
+
+    await async_setup_services(hass)
+    return registered["async_execute_command_service"][0]
+
+
+def _call(command):
+    call = MagicMock()
+    call.data = {ATTR_COMMAND: command, ATTR_ENTRY_ID: None}
+    return call
+
+
+# ─── Tests: response shape normalization ───────────────────────────────
+@pytest.mark.asyncio
+async def test_event_payload_returned_as_dict():
+    """Regression: Event with .payload dict still flows through unchanged."""
+    payload = {"status": "ok", "value": 42}
+    coord = _build_coordinator("get_time", _Event(_ET.MSG_SENT, payload))
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("get_time"))
+
+    assert result == payload
+
+
+@pytest.mark.asyncio
+async def test_event_with_empty_payload_still_returns_a_dict():
+    """A timed-out login or a bare OK must not surface as None (HA rejects it)."""
+    coord = _build_coordinator("send_login_sync", _Event(_ET.MSG_SENT, {}))
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("send_login_sync"))
+
+    assert isinstance(result, dict)
+    assert result["command"] == "send_login_sync"
+
+
+@pytest.mark.asyncio
+async def test_sdk_exception_returns_an_error_dict(monkeypatch):
+    """A command that raises inside the SDK reports the failure instead of None."""
+    monkeypatch.setitem(async_setup_services.__globals__, "HomeAssistantError", RuntimeError)
+    coord = _build_coordinator("get_time", None)
+    coord.api.commands.get_time = AsyncMock(
+        side_effect=ValueError("Invalid public key hex string: abc")
+    )
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("get_time"))
+
+    assert result["error"] == "exception"
+    assert result["command"] == "get_time"
+    assert "Invalid public key" in result["detail"]
+
+
+@pytest.mark.asyncio
+async def test_event_with_bytes_in_payload_is_hex_encoded():
+    """Bytes inside an Event payload are converted to hex strings."""
+    payload = {"key": b"\x01\x02\xff", "name": "node"}
+    coord = _build_coordinator("get_time", _Event(_ET.MSG_SENT, payload))
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("get_time"))
+
+    assert result == {"key": "0102ff", "name": "node"}
+
+
+@pytest.mark.asyncio
+async def test_plain_dict_response_is_passed_through():
+    """req_*_sync returns a plain dict — must surface as the response."""
+    contact = {
+        "adv_name": "repeater",
+        "public_key": "c9b4f226ecd1" + "0" * 52,
+        "pubkey_prefix": "c9b4f226ecd1",
+    }
+    coord = _build_coordinator(
+        "req_owner_sync",
+        return_value={"name": "MyRepeater", "owner": "alice"},
+        contact=contact,
+    )
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_owner_sync c9b4f226ecd1"))
+
+    assert result == {"name": "MyRepeater", "owner": "alice"}
+
+
+@pytest.mark.asyncio
+async def test_plain_dict_response_converts_bytes_to_hex():
+    """Bytes inside a plain-dict response are also hex-encoded."""
+    contact = {
+        "adv_name": "node",
+        "public_key": "abcdef123456" + "0" * 52,
+        "pubkey_prefix": "abcdef123456",
+    }
+    coord = _build_coordinator(
+        "req_owner_sync",
+        return_value={"name": "n", "raw": b"\xde\xad\xbe\xef"},
+        contact=contact,
+    )
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_owner_sync abcdef123456"))
+
+    assert result == {"name": "n", "raw": "deadbeef"}
+
+
+@pytest.mark.asyncio
+async def test_list_response_is_wrapped_in_result():
+    """req_telemetry_sync returns a list (lpp) — must surface as {"result": [...]}."""
+    contact = {
+        "adv_name": "sensor",
+        "public_key": "abcdef123456" + "0" * 52,
+        "pubkey_prefix": "abcdef123456",
+    }
+    lpp = [{"channel": 1, "type": "temperature", "value": 21.5}]
+    coord = _build_coordinator(
+        "req_telemetry_sync",
+        return_value=lpp,
+        contact=contact,
+    )
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_telemetry_sync abcdef123456"))
+
+    assert result == {"result": lpp}
+
+
+@pytest.mark.asyncio
+async def test_string_response_is_wrapped_in_result():
+    """req_regions_sync returns a str — must surface as {"result": "US"}."""
+    coord = _build_coordinator("req_regions_sync", return_value="US")
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_regions_sync"))
+
+    assert result == {"result": "US"}
+
+
+@pytest.mark.asyncio
+async def test_none_response_returns_structured_error():
+    """req_*_sync returning None (timeout) yields a structured error dict
+    instead of None — which is what was breaking the HA UI."""
+    contact = {
+        "adv_name": "repeater",
+        "public_key": "c9b4f226ecd1" + "0" * 52,
+        "pubkey_prefix": "c9b4f226ecd1",
+    }
+    coord = _build_coordinator(
+        "req_status_sync",
+        return_value=None,
+        contact=contact,
+    )
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_status_sync c9b4f226ecd1"))
+
+    assert result == {"error": "no_response", "command": "req_status_sync"}
+
+
+@pytest.mark.asyncio
+async def test_short_pubkey_prefix_returns_clear_error():
+    """A too-short contact prefix returns a structured error, not silent None."""
+    coord = _build_coordinator("req_status_sync", return_value=None, contact=None)
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_status_sync ae6d"))
+
+    assert result["error"] == "pubkey_prefix_too_short"
+    assert result["argument"] == "ae6d"
+    assert result["command"] == "req_status_sync"
+
+
+@pytest.mark.asyncio
+async def test_unknown_contact_returns_clear_error():
+    """An unresolvable contact returns contact_not_found, not silent None."""
+    coord = _build_coordinator("req_status_sync", return_value=None, contact=None)
+    handler = await _get_execute_handler(coord)
+
+    result = await handler(_call("req_status_sync deadbeefcafe"))
+
+    assert result["error"] == "contact_not_found"
+    assert result["argument"] == "deadbeefcafe"
+
+
+@pytest.mark.parametrize("command", ["get_msg", "get_msg()", "send(b'\\x0a')", "send(data=b'\\x0a')"])
+async def test_queue_commands_blocked_when_consumption_disabled(command):
+    command_name = "send" if command.startswith("send") else "get_msg"
+    coord = _build_coordinator(command_name, _Event("ok", {}))
+    if command_name == "send":
+        coord.api.commands.send.__signature__ = inspect.Signature([
+            inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+        ])
+    coord.consume_incoming_messages = False
+    handler = await _get_execute_handler(coord)
+    assert await handler(_call(command)) == {"error": "Incoming message consumption is disabled"}
+    getattr(coord.api.commands, command_name).assert_not_awaited()
+
+
+@pytest.mark.parametrize("command_name,command", [
+    ("get_bat", "get_bat"),
+    ("send_cmd", "send_cmd('repeater', 'version')"),
+    ("send", "send(b'\\x14')"),
+])
+async def test_non_queue_commands_work_when_consumption_disabled(command_name, command):
+    coord = _build_coordinator(command_name, _Event("ok", {"sent": True}), contact={"public_key": "ab" * 32})
+    coord.consume_incoming_messages = False
+    handler = await _get_execute_handler(coord)
+    assert await handler(_call(command)) == {"sent": True}
+    getattr(coord.api.commands, command_name).assert_awaited_once()
+
+
+async def test_get_msg_still_available_when_enabled():
+    coord = _build_coordinator("get_msg", _Event("ok", {}))
+    coord.consume_incoming_messages = True
+    handler = await _get_execute_handler(coord)
+    await handler(_call("get_msg"))
+    coord.api.commands.get_msg.assert_awaited_once()
